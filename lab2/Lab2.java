@@ -1,18 +1,27 @@
+import java.util.InputMismatchException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-/** Варіант 4.
+/**
+ * Варіант 4.
  * C3 = 1 = String
- * C17 = 4 = В кожному реченні заданого тексту змінити місцями перше та останнє слово, не змінивши довжини речення.
+ * C17 = 4 = У кожному реченні заданого тексту змінити місцями
+ * перше та останнє слово, не змінюючи довжини речення.
+ * @author Марія Зозуля
+ * @group ІС-34
  */
 public class Lab2 {
+
     public static void main(String[] args) {
         Scanner scanner = null;
+
         try {
             scanner = new Scanner(System.in);
             System.out.println("Введіть текст (завершіть порожнім рядком):");
 
             StringBuilder inputBuilder = new StringBuilder();
-            String line;
+            String line = "";
+
             while (scanner.hasNextLine()) {
                 line = scanner.nextLine();
                 if (line.trim().isEmpty()) {
@@ -22,8 +31,9 @@ public class Lab2 {
             }
 
             String text = inputBuilder.toString().trim();
+
             if (text.isEmpty()) {
-                System.out.println("Помилка: Введений текст порожній.");
+                System.out.println("Помилка: введений текст порожній.");
                 return;
             }
 
@@ -31,8 +41,16 @@ public class Lab2 {
             System.out.println("\nРезультат:");
             System.out.println(result);
 
+        } catch (InputMismatchException e) {
+            System.err.println("Помилка вводу: невірний формат даних.");
+        } catch (NoSuchElementException e) {
+            System.err.println("Помилка: неочікуваний кінець вводу.");
+        } catch (IllegalArgumentException e) {
+            System.err.println("Помилка обробки тексту: " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.err.println("Помилка: текст не може бути null.");
         } catch (Exception e) {
-            System.err.println("Виникла неочікувана помилка: " + e.getMessage());
+            System.err.println("Невідома помилка: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (scanner != null) {
@@ -41,9 +59,18 @@ public class Lab2 {
         }
     }
 
+    /**
+     * Замінює перше та останнє слово у кожному реченні тексту.
+     *
+     * @param text вихідний текст
+     * @return змінений текст
+     */
     public static String swapFirstAndLastWordInSentences(String text) {
         if (text == null) {
-            throw new NullPointerException("Текст не може бути null");
+            throw new NullPointerException("Текст не може бути null.");
+        }
+        if (text.trim().isEmpty()) {
+            throw new IllegalArgumentException("Текст не може бути порожнім.");
         }
 
         StringBuilder result = new StringBuilder();
@@ -52,9 +79,9 @@ public class Lab2 {
 
         while (i < length) {
             int sentenceStart = i;
-
-            // Знаходимо кінець речення: . ! ? + пробіл або кінець тексту
             int sentenceEnd = -1;
+
+            // Знаходимо кінець речення (. ! ?)
             while (i < length) {
                 char c = text.charAt(i);
                 if ((c == '.' || c == '!' || c == '?') &&
@@ -70,11 +97,19 @@ public class Lab2 {
             }
 
             String sentence = text.substring(sentenceStart, sentenceEnd);
-            String processed = swapFirstAndLastWord(sentence);
-            result.append(processed);
+            String processedSentence;
 
-            // Пропускаємо пробіли після розділового знака
+            try {
+                processedSentence = swapFirstAndLastWord(sentence);
+            } catch (Exception e) {
+                processedSentence = sentence; // Якщо помилка – лишаємо речення без змін
+            }
+
+            result.append(processedSentence);
+
+            // Пропускаємо пробіли після кінця речення
             while (i < length && Character.isWhitespace(text.charAt(i))) {
+                result.append(text.charAt(i));
                 i++;
             }
         }
@@ -82,72 +117,33 @@ public class Lab2 {
         return result.toString();
     }
 
-
+    /**
+     * Міняє місцями перше і останнє слово в одному реченні.
+     *
+     * @param sentence речення
+     * @return речення з поміняними словами
+     */
     private static String swapFirstAndLastWord(String sentence) {
         if (sentence == null || sentence.trim().isEmpty()) {
             return sentence;
         }
 
-        char[] chars = sentence.toCharArray();
-        int len = chars.length;
-
-        // Знаходимо початок першого слова
-        int firstStart = 0;
-        while (firstStart < len && !isWordChar(chars[firstStart])) {
-            firstStart++;
-        }
-        if (firstStart == len) return sentence;
-
-        int firstEnd = firstStart;
-        while (firstEnd < len && isWordChar(chars[firstEnd])) {
-            firstEnd++;
+        String[] words = sentence.trim().split("\\s+");
+        if (words.length < 2) {
+            return sentence; // тільки одне слово — нічого не міняємо
         }
 
-        // Знаходимо кінець останнього слова
-        int lastEnd = len - 1;
-        while (lastEnd >= 0 && !isWordChar(chars[lastEnd])) {
-            lastEnd--;
-        }
-        if (lastEnd < 0) return sentence;
+        // Міняємо місцями перше та останнє слово
+        String temp = words[0];
+        words[0] = words[words.length - 1];
+        words[words.length - 1] = temp;
 
-        int lastStart = lastEnd;
-        while (lastStart >= 0 && isWordChar(chars[lastStart])) {
-            lastStart--;
-        }
-        lastStart++;
-
-        // Якщо одне слово — не міняємо
-        if (firstStart == lastStart && firstEnd == lastEnd + 1) {
-            return sentence;
+        // Відновлюємо розділові знаки в кінці
+        String punctuation = "";
+        if (sentence.matches(".*[.!?]$")) {
+            punctuation = sentence.substring(sentence.length() - 1);
         }
 
-        char[] result = chars.clone();
-
-        int i = firstStart;
-        int j = lastStart;
-        while (i < firstEnd && j <= lastEnd) {
-            result[i] = chars[j];
-            result[j] = chars[firstStart + (j - lastStart)];
-            i++;
-            j++;
-        }
-
-        // Обробка різної довжини слів
-        if (i < firstEnd) {
-            for (int k = i; k < firstEnd; k++) {
-                result[k] = chars[lastStart + (k - i)];
-            }
-        } else if (j <= lastEnd) {
-            for (int k = j; k <= lastEnd; k++) {
-                result[firstStart + (k - j)] = chars[k];
-            }
-        }
-
-        return new String(result);
-    }
-
-
-    private static boolean isWordChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '\'';
+        return String.join(" ", words) + punctuation;
     }
 }
